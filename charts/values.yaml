@@ -1,0 +1,23 @@
+image:
+  repository: 9611534434107.dkr.ecr.us-west-2.amazonaws.com/lesson-7-ecr
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 8000
+
+ingress:
+  enabled: false
+
+config:
+  SECRET_KEY: "django-secure-0f4e8a2b9d7c6e1f"
+  DEBUG: "False"
+  ALLOWED_HOSTS: "*,0.0.0.0,localhost"
+  DATABASE_URL: "postgres://postgres:fP9xLj3BzQ%@test-postgres-postgresql:5432/postgres"
+  POSTGRES_HOST: test-postgres-postgresql
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: postgres
+  POSTGRES_DB: postgres
+  POSTGRES_PASSWORD: "fP9xLj3BzQ%"
+  DJANGO_SETTINGS_MODULE: "goit.settings"

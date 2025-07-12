@@ -7,7 +7,7 @@ resource "aws_s3_bucket" "terraform_state" {
 
   tags = {
     Name        = "Terraform State Bucket"  # Helps identify the bucket in the AWS console
-    Environment = "lesson-5"                # Project or environment tag
+    Environment = "lesson-7"                # Project or environment tag
   }
 }
 

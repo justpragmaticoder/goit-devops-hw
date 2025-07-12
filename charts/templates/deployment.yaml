@@ -1,0 +1,27 @@
+apiVersion: apps/v1                              # Kubernetes API version for Deployments
+kind: Deployment                                 # Defines a Deployment, which manages replica sets and pods
+metadata:
+  name: {{ .Release.Name }}-django               # Name of the Deployment object, prefixed by the release name
+spec:
+  replicas: 1                                    # Desired number of pod replicas
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-django            # Label selector matching pods managed by this Deployment
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-django          # Labels applied to each Pod; must match selector
+    spec:
+      containers:
+        - name: django                           # Name of the container within the Pod
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"  
+                                                 # Docker image (repository:tag) for the container
+          imagePullPolicy: {{ .Values.image.pullPolicy }}  
+                                                 # Policy for pulling the image (Always, IfNotPresent, Never)
+          ports:
+            - containerPort: {{ .Values.service.port }}  
+                                                 # Container port to expose for this container
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-config  
+                                                 # Import all keys from the ConfigMap into container env vars

@@ -1,0 +1,15 @@
+apiVersion: v1                 # Kubernetes API version for core resources
+kind: Service                  # Defines a Service, which exposes pods as network services
+metadata:
+  name: {{ .Release.Name }}-django  
+                                # Name of the Service object, prefixed by the release name
+spec:
+  type: {{ .Values.service.type }}  
+                                # Service type (ClusterIP, NodePort, LoadBalancer, or ExternalName)
+  selector:
+    app: {{ .Release.Name }}-django  
+                                # Label selector to target the pods labeled “app=<release>-django”
+  ports:
+    - port: 80                 # Port on which the Service is exposed inside the cluster
+      targetPort: {{ .Values.service.port }}  
+                                # Port on the pod’s container to forward traffic to

@@ -1,0 +1,6 @@
+apiVersion: v2              # Helm chart API version (Helm 3+)
+name: django-app            # Chart name (must be unique within a repository)
+description: A Helm chart for Kubernetes  
+type: application           # Chart type—‘application’ for deployable apps (not a library)
+version: 0.1.0              # Chart version (semantically versioned; changes when chart is modified)
+appVersion: "1.16.0"        # Version of the underlying application this chart deploys

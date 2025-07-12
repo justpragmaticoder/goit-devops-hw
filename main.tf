@@ -1,8 +1,8 @@
 # Module for S3 state bucket and DynamoDB lock table
 module "s3_backend" {
-  source              = "./modules/s3-backend"              # Path to the module
-  s3_bucket_name      = "vasyl-p-terraform-states-lesson-5"  # S3 bucket name
-  dynamodb_table_name = "terraform-locks"                   # DynamoDB table name
+  source              = "./modules/s3-backend"                       # Path to the module
+  s3_bucket_name      = "vasyl-p-lesson-7"                           # S3 bucket name
+  dynamodb_table_name = "terraform-locks"                            # DynamoDB table name
 }
 
 # Module for the VPC
@@ -18,6 +18,15 @@ module "vpc" {
 # Module for ECR
 module "ecr" {
   source             = "./modules/ecr"          # Path to the ECR module
-  ecr_name           = "lesson5-ecr"            # ECR repository name
+  ecr_name           = "lesson-7-ecr"           # ECR repository name
   scan_on_push       = true                     # Enable image scan on push
+}
+
+# Module for EKS
+module "eks" {
+  source         = "./modules/eks"              # Path to the local module that provisions an Amazon EKS cluster
+  cluster_name   = "lesson-7-eks"               # The name to assign to your EKS cluster (as seen in the AWS Console and CLI)
+  cluster_version = "1.29"                      # The Kubernetes version for the control plane and nodes
+  subnet_ids     = module.vpc.public_subnets    # List of subnet IDs where EKS worker nodes will be launched
+  vpc_id         = module.vpc.vpc_id            # The ID of the VPC in which to create the EKS cluster
 }

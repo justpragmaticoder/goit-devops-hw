@@ -1,0 +1,18 @@
+apiVersion: autoscaling/v2        # API version for the HorizontalPodAutoscaler (HPA) resource
+kind: HorizontalPodAutoscaler     # Kind of the resource; defines an HPA to auto-scale Deployments, ReplicaSets, or StatefulSets
+metadata:
+  name: app-hpa                   # Name of this HPA object in Kubernetes
+spec:
+  scaleTargetRef:                 # Reference to the Kubernetes resource to scale
+    apiVersion: apps/v1           # API version of the target resource (Deployment in this case)
+    kind: Deployment              # Kind of the target resource to autoscale
+    name: {{ .Release.Name }}-django  # Name of the Deployment that the HPA will monitor and scale
+  minReplicas: 2                  # Minimum number of pod replicas the HPA will maintain
+  maxReplicas: 4                  # Maximum number of pod replicas the HPA can scale up to
+  metrics:                        # List of metrics on which to base scaling decisions
+    - type: Resource              # Metric type: Resource metric (e.g., CPU, memory)
+      resource:
+        name: cpu                 # Resource metric name to monitor (CPU utilization)
+        target:
+          type: Utilization       # Target metric type: percentage utilization of the resource
+          averageUtilization: 70  # Desired average CPU utilization across all pods (in percent)

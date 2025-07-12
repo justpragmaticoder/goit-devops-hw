@@ -17,6 +17,6 @@ resource "aws_dynamodb_table" "terraform_locks" {
 
   tags = {
     Name        = "Terraform Lock Table"          # Helps identify the table in the console
-    Environment = "lesson-5"                      # Project or environment tag
+    Environment = "lesson-7"                      # Project or environment tag
   }
 }
