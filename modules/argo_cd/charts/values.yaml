@@ -1,0 +1,31 @@
+# List of Argo CD applications to be deployed
+applications:
+  - name: example-app                # Name of the Argo CD application
+    namespace: default              # Target namespace in the destination cluster where the app will be deployed
+    project: default                # Argo CD project under which the application is grouped
+    source:
+      repoURL: https://github.com/YOUR_USERNAME/example-repo.git  # Git repository containing the application Helm chart
+      path: django-chart           # Path inside the repository where the Helm chart is located
+      targetRevision: main         # Git branch, tag, or commit to track for updates
+      helm:
+        valueFiles:
+          - values.yaml            # Custom Helm values file to apply during deployment
+    destination:
+      server: https://kubernetes.default.svc  # Kubernetes API server URL (default for in-cluster)
+      namespace: default                       # Namespace where the application will be deployed
+    syncPolicy:
+      automated:
+        prune: true               # Automatically delete resources that are no longer tracked
+        selfHeal: true            # Automatically apply changes if the live state drifts from the desired state
+
+# List of Git repositories accessible to Argo CD
+repositories:
+  - name: example-app              # Logical name for the repository within Argo CD
+    url: https://github.com/YOUR_USERNAME/example-repo.git  # Repository URL
+    username: YOUR_USERNAME       # Username for repository authentication (if private)
+    password: YOUR_PASS           # Password or token for repository authentication
+
+# Configuration for Argo CD repository handling
+repoConfig:
+  insecure: "true"                # Allow insecure connections to repositories (e.g., self-signed certs)
+  enableLfs: "true"               # Enable Git Large File Storage (LFS) support
