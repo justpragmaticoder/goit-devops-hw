@@ -94,3 +94,67 @@ module "argo_cd" {
   namespace     = "argocd"                # Kubernetes namespace for ArgoCD deployment
   chart_version = "5.46.4"                # Helm chart version for ArgoCD
 }
+
+# -----------------------------------------------------------------------------
+# RDS / Aurora Module Invocation
+# -----------------------------------------------------------------------------
+# This block instantiates the reusable RDS module, provisioning either a
+# two‑node Aurora PostgreSQL cluster or a single‑instance PostgreSQL database
+# depending on the `use_aurora` flag. Values marked "Aurora‑only" are ignored
+# when standard RDS is selected and vice‑versa.
+# -----------------------------------------------------------------------------
+module "rds" {
+  source = "./modules/rds"                 # Relative path to the RDS module
+
+  # ---------------------------
+  # Naming & high‑level toggle
+  # ---------------------------
+  name           = "myapp-db"              # Prefix for DB resources
+  use_aurora     = true                    # true = Aurora cluster, false = single RDS instance
+  aurora_instance_count = 2               # 1 writer + 1 reader (minimum 2 for HA)
+
+  # ---------------------------
+  # Aurora‑specific settings
+  # ---------------------------
+  engine_cluster             = "aurora-postgresql"   # Aurora engine
+  engine_version_cluster     = "15.3"                # Aurora engine version
+  parameter_group_family_aurora = "aurora-postgresql15" # PG family for Aurora
+
+  # ---------------------------
+  # Standard RDS‑specific settings (ignored if use_aurora = true)
+  # ---------------------------
+  engine                     = "postgres"            # Engine for single instance
+  engine_version             = "17.2"                # Engine version for single instance
+  parameter_group_family_rds = "postgres17"          # PG family for RDS
+
+  # ---------------------------
+  # Common settings (apply to both Aurora & RDS)
+  # ---------------------------
+  instance_class    = "db.t3.medium"      # Instance size
+  allocated_storage = 20                  # Storage (only for standard RDS)
+  db_name           = "myapp"             # Initial database name
+  username          = "postgres"          # Master user
+  password          = "admin123AWS23"     # Master password (should be stored in secrets manager)
+
+  # Networking
+  subnet_private_ids  = module.vpc.private_subnets # Used when publicly_accessible = false
+  subnet_public_ids   = module.vpc.public_subnets  # Used when publicly_accessible = true
+  publicly_accessible = true                      # Expose public endpoint
+  vpc_id              = module.vpc.vpc_id         # VPC where DB will reside
+  multi_az            = true                      # Enable Multi‑AZ for standard RDS
+
+  # Backup & maintenance
+  backup_retention_period = 7                     # Keep automated backups for 7 days
+
+  # Custom engine parameters
+  parameters = {
+    max_connections            = "200"           # Increase connection limit
+    log_min_duration_statement = "500"           # Log long‑running queries (ms)
+  }
+
+  # Tagging for cost tracking & ownership
+  tags = {
+    Environment = "dev"
+    Project     = "myapp"
+  }
+}

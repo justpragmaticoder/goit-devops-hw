@@ -14,7 +14,8 @@ goit-devops-hw/
 │   ├── ecr/                # ECR registry
 │   ├── s3-backend/         # Remote state backend (S3 + DynamoDB)
 │   ├── jenkins/            # Jenkins with IRSA & StorageClass
-│   └── argo_cd/            # Argo CD with Helm apps
+│   ├── argo_cd/            # Argo CD with Helm apps
+│   └── rds/                # RDS / Aurora database module
 ├── charts/                 # Helm chart for Django app
 ├── Jenkinsfile             # CI pipeline (Docker build & tag update)
 └── main.tf / outputs.tf    # Root Terraform configs
@@ -173,6 +174,106 @@ GitHub Repo
 ```
 
 ---
+
+## 🗄️ RDS / Aurora Module Example
+
+Below is a **minimal but complete** example that provisions a two-node **Aurora PostgreSQL 15.3** cluster.  
+Set `use_aurora = false` to create a single-instance RDS PostgreSQL 17.2 instead.
+
+```hcl
+module "rds" {
+  source = "./modules/rds"
+
+  # 1️⃣ Naming & toggle
+  name            = "myapp-db"
+  use_aurora      = true          # true = Aurora, false = RDS
+  aurora_instance_count = 2       # 1 writer + 1 reader
+
+  # 2️⃣ Engine / version
+  engine_cluster         = "aurora-postgresql"
+  engine_version_cluster = "15.3"
+  engine                 = "postgres"
+  engine_version         = "17.2"
+
+  # 3️⃣ Sizing
+  instance_class    = "db.t3.medium"
+  allocated_storage = 20          # Standard RDS only
+
+  # 4️⃣ Networking
+  vpc_id              = module.vpc.vpc_id
+  subnet_private_ids  = module.vpc.private_subnets
+  subnet_public_ids   = module.vpc.public_subnets
+  publicly_accessible = true
+  multi_az            = true      # Standard RDS only
+
+  # 5️⃣ Credentials & DB name
+  db_name  = "myapp"
+  username = "postgres"
+  password = "ChangeMeSecure1!"
+
+  # 6️⃣ Backup & parameters
+  backup_retention_period = 7
+  parameters = {
+    max_connections            = "200"
+    log_min_duration_statement = "500"
+  }
+
+  # 7️⃣ Tags
+  tags = {
+    Environment = "dev"
+    Project     = "myapp"
+  }
+}
+```
+
+---
+
+## 📚 Variable Reference
+
+| Variable | Type / Default | Description |
+|----------|----------------|-------------|
+| `name` | *string* | Prefix for all DB resources. |
+| `use_aurora` | *bool* = `false` | `true` → deploy Aurora cluster, `false` → single RDS. |
+| `aurora_instance_count` | *number* = `2` | Total Aurora instances (≥2 for HA). |
+| `aurora_replica_count` | *number* = `1` | Number of Aurora reader replicas (alternative to `aurora_instance_count`). |
+| `engine_cluster` | *string* = `aurora-postgresql` | Aurora engine (`aurora-mysql`, `aurora-postgresql`). |
+| `engine_version_cluster` | *string* = `15.3` | Aurora engine version. |
+| `parameter_group_family_aurora` | *string* = `aurora-postgresql15` | Parameter group family for Aurora. |
+| `engine` | *string* = `postgres` | Engine for standard RDS (`mysql`, `postgres`, etc.). |
+| `engine_version` | *string* = `14.7` | Engine version for standard RDS. |
+| `parameter_group_family_rds` | *string* = `postgres15` | Parameter group family for RDS. |
+| `instance_class` | *string* = `db.t3.micro` | DB instance size for both Aurora & RDS. |
+| `allocated_storage` | *number* = `20` | Storage in GB (standard RDS only). |
+| `db_name` | *string* | Initial database to create. |
+| `username` | *string* | Master DB username. |
+| `password` | *string* **(sensitive)** | Master DB password. |
+| `vpc_id` | *string* | VPC ID where subnets reside. |
+| `subnet_private_ids` | *list(string)* | Private subnet IDs. |
+| `subnet_public_ids` | *list(string)* | Public subnet IDs (if `publicly_accessible = true`). |
+| `publicly_accessible` | *bool* = `false` | Expose DB publicly. |
+| `multi_az` | *bool* = `false` | Enable Multi-AZ for standard RDS. |
+| `backup_retention_period` | *string* | Days to retain automated backups. |
+| `parameters` | *map(string)* | Custom engine parameters (key → value). |
+| `tags` | *map(string)* | Tags applied to all DB resources. |
+
+---
+
+## 🔄 How to Change DB Type, Engine, Instance Class, etc.
+
+| Scenario | Settings to Adjust |
+|----------|-------------------|
+| **Switch Aurora → RDS** | `use_aurora = false`, update `engine`, `engine_version`, `instance_class`, remove/ignore `aurora_instance_count`. |
+| **Change Aurora from Postgres to MySQL** | `engine_cluster = "aurora-mysql"`, pick a compatible `engine_version_cluster`, update `parameter_group_family_aurora`. |
+| **Upgrade Engine Version** | Increment `engine_version` (RDS) or `engine_version_cluster` (Aurora). |
+| **Resize Instances** | Modify `instance_class` for both; adjust `aurora_instance_count` / `aurora_replica_count` for scaling reads. |
+| **Increase Storage (standard RDS)** | Raise `allocated_storage`. Aurora storage auto‑scales. |
+| **Make DB Private** | `publicly_accessible = false`, ensure private subnets and SG allow only internal CIDRs. |
+
+> Tip: After changing variables run `terraform plan` to preview updates, then `terraform apply`.
+
+---
+
+*This README focuses on the RDS/Aurora module. For full CI/CD setup details (EKS, Jenkins, Argo CD), see earlier sections of the file.*
 
 ## 💻 Author
 
