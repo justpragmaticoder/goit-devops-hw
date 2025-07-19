@@ -24,45 +24,83 @@ goit-devops-hw/
 
 ## ✅ Features
 
-- ✅ **EKS cluster** with public subnets
-- ✅ **Jenkins on Kubernetes** with EBS dynamic volumes
-- ✅ **Kaniko** for building/pushing images securely
-- ✅ **IRSA** (IAM Roles for Service Accounts) for secure ECR access
-- ✅ **Argo CD** for GitOps deployments
-- ✅ **Remote Terraform state** (S3 + DynamoDB lock)
+- ✅ **EKS cluster** with public subnets  
+- ✅ **Jenkins on Kubernetes** with EBS dynamic volumes  
+- ✅ **Kaniko** for building/pushing images securely  
+- ✅ **IRSA** (IAM Roles for Service Accounts) for secure ECR access  
+- ✅ **Argo CD** for GitOps deployments  
+- ✅ **Remote Terraform state** (S3 + DynamoDB lock)  
 
 ---
 
 ## ⚙️ Prerequisites
 
-- AWS CLI & credentials with admin access
-- Terraform >= 1.3
-- kubectl + AWS IAM Authenticator
-- Helm >= 3.0
-- EKS cluster OIDC enabled
+- AWS CLI & credentials with admin access  
+- Terraform >= 1.3  
+- kubectl + AWS IAM Authenticator  
+- Helm >= 3.0  
+- EKS cluster OIDC enabled  
 
 ---
 
-## 🚀 Deployment Steps
+## 🛠 How to apply Terraform
 
 ```bash
-# 1. Clone the project
-$ git clone -b lesson-8-9 https://github.com/justpragmaticoder/goit-devops-hw.git
-$ cd goit-devops-hw
+# 1. Initialize Terraform
+terraform init
 
-# 2. Initialize Terraform
-$ terraform init
+# 2. Review the execution plan
+terraform plan
 
-# 3. Review and apply infrastructure
-$ terraform apply -auto-approve
-
-# 4. Get access to EKS cluster
-$ aws eks update-kubeconfig --region us-west-2 --name lesson-7-eks
-
-# 5. Verify Jenkins and ArgoCD
-$ kubectl get svc -n jenkins
-$ kubectl get svc -n argocd
+# 3. Apply infrastructure changes
+terraform apply -auto-approve
 ```
+
+> 📦 After applying, the EKS cluster, Jenkins, Argo CD, and other services will be provisioned.
+
+---
+
+## 🔧 How to check a Jenkins Job
+
+1. Get the Jenkins service endpoint:
+   ```bash
+   kubectl get svc -n jenkins
+   ```
+2. Open the LoadBalancer IP in your browser:
+   ```
+   http://<JENKINS-EXTERNAL-IP>
+   ```
+3. Log in:
+   ```
+   Username: admin
+   Password: changeme123
+   ```
+4. Find and run the Job (e.g., `seed-job` or `goit-django-docker`).  
+5. Check the build logs under **Console Output**.
+
+> ⚙️ The job will build the Docker image, push it to ECR, and update the Helm chart tag in GitHub.
+
+---
+
+## 🎯 How to see the result in Argo CD
+
+1. Get the Argo CD service endpoint:
+   ```bash
+   kubectl get svc -n argocd
+   ```
+2. Open the LoadBalancer IP in your browser:
+   ```
+   https://<ARGOCD-EXTERNAL-IP>
+   ```
+3. Log in:
+   ```
+   Username: admin
+   Password: $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+   ```
+4. In the Argo CD UI, find your application (e.g., `example-app`) and verify:
+   - Status is **Healthy**  
+   - Sync status is **Synced**  
+   - Image tag matches the version pushed by Jenkins  
 
 ---
 
@@ -71,7 +109,7 @@ $ kubectl get svc -n argocd
 The Jenkinsfile defines a 2-stage pipeline:
 
 1. **Build & Push Image** - Jenkins + Kaniko builds Docker image and pushes to ECR  
-2. **Update Helm values.yaml** - Git-clones the repo, changes tag, and pushes to `main`
+2. **Update Helm values.yaml** - Git-clones the repo, updates the tag, and pushes to `main`  
 
 ```groovy
 pipeline {
@@ -87,14 +125,14 @@ pipeline {
 
 ## 🔁 Argo CD GitOps
 
-Argo CD continuously syncs the Helm release from the Git repo. Whenever the `values.yaml` file is updated with a new image tag, ArgoCD applies the update automatically.
+Argo CD continuously syncs the Helm release from the Git repository. Whenever `values.yaml` is updated with a new image tag, Argo CD applies the change automatically.
 
 ```yaml
 applications:
   - name: example-app
     source:
       repoURL: https://github.com/justpragmaticoder/goit-devops-hw.git
-      path: django-chart
+      path: charts
       targetRevision: main
 ```
 
@@ -106,7 +144,7 @@ applications:
 # Argo CD Admin Password:
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 
-# Jenkins Admin:
+# Jenkins Admin Credentials:
 Username: admin
 Password: changeme123
 ```
@@ -131,12 +169,12 @@ GitHub Repo
                                  └── Tag updated in Helm chart
                                         │
                                         ▼
-                                Argo CD syncs → K8s deploy
+                                Argo CD syncs → Kubernetes deploy
 ```
 
 ---
 
 ## 💻 Author
 
-- GitHub: [justpragmaticoder](https://github.com/justpragmaticoder)
-- GoIT DevOps Course
+- GitHub: [justpragmaticoder](https://github.com/justpragmaticoder)  
+- GoIT DevOps Course  
