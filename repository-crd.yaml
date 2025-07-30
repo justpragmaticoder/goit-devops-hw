@@ -1,0 +1,74 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: repositories.argoproj.io
+spec:
+  group: argoproj.io
+  scope: Cluster
+  names:
+    plural: repositories
+    singular: repository
+    kind: Repository
+    shortNames:
+      - repo
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: The Git/Helm repository URL.
+                name:
+                  type: string
+                  description: A logical name for this repository.
+                username:
+                  type: string
+                  description: Username for basic auth (optional).
+                password:
+                  type: string
+                  description: Password or token for basic auth (optional).
+                sshPrivateKeySecret:
+                  type: object
+                  description: Reference to a Secret containing an SSH private key.
+                  properties:
+                    name:
+                      type: string
+                      description: Secret name.
+                    key:
+                      type: string
+                      description: Key in the Secret data.
+                tlsClientCertData:
+                  type: string
+                  description: TLS client certificate data (base64).
+                tlsClientCertKey:
+                  type: string
+                  description: TLS client certificate key (base64).
+                insecure:
+                  type: boolean
+                  description: Skip TLS verification for this repo.
+      additionalPrinterColumns:
+        - name: URL
+          type: string
+          jsonPath: .spec.url
+          description: Repository URL
+        - name: AGE
+          type: date
+          jsonPath: .metadata.creationTimestamp
+          description: Time since creation
+        - name: SYNC
+          type: string
+          jsonPath: .status.sync.status
+          description: Last sync status
